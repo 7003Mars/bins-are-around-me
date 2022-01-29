@@ -2,10 +2,10 @@ import logging
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional, cast
-from json import dumps
-from flask import json as flask_json
 
-from flask import Flask, jsonify, request
+from flask import Flask
+from flask import json as flask_json
+from flask import jsonify, request
 from flask_cors import CORS  # TODO: Needed?
 from flask_restx import Api, Resource
 from flask_restx.reqparse import RequestParser
@@ -81,7 +81,7 @@ class AddBin(Resource):
         lat: float = result['lat']
         lng: float = result['lng']
         full_addr: str = Nominatim(user_agent='6bceb638-f132-4961-b7c2-fe6d588df78d').reverse((lat, lng)).address
-        addr: str = full_addr.split(',', 2)[0:2]
+        addr: str = ','.join(full_addr.split(',', 2)[0:2])
         bins: Bins = Bins(lat=lat, lng=lng, state='EMPTY', addr=addr)
         db.session.add(bins)
         db.session.commit()
