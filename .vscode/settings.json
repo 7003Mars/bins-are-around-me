@@ -1,0 +1,11 @@
+{
+	"python.pythonPath": "env/bin/python",
+	"python.linting.mypyArgs": [
+		"--follow-imports=silent",
+		"--ignore-missing-imports",
+		"--show-column-numbers",
+		"--no-pretty",
+		"--check-untyped-defs"
+	],
+	"python.linting.mypyEnabled": true
+}
