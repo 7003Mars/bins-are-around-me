@@ -1,5 +1,4 @@
 import logging
-import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
@@ -21,11 +20,13 @@ from classifier import States, get_state_result
 app: Flask = Flask(__name__)
 CORS(app)
 # Sockets
-socket: SocketIO_Flask = SocketIO_Flask(app, cors_allowed_origins="*", json=flask_json)
+socket: SocketIO_Flask = SocketIO_Flask(
+    app, cors_allowed_origins="*", json=flask_json)
 # Rest
 api: Api = Api(app)
 # Db config
-db_path: str = 'sqlite:///' + str(Path(__file__).parent.resolve() / "database.db")
+db_path: str = 'sqlite:///' + \
+    str(Path(__file__).parent.resolve() / "database.db")
 app.config['SQLALCHEMY_DATABASE_URI'] = db_path
 db: SQLAlchemy = SQLAlchemy(app)
 # Db models
@@ -40,7 +41,8 @@ class Bins(db.Model):
     addr = db.Column(db.String(255))
 
 
-Bin = TypedDict('Bin', {'id': int, 'last_update': datetime, 'lat': float, 'lng': float, 'state': str, 'addr': str})
+Bin = TypedDict('Bin', {'id': int, 'last_update': datetime,
+                'lat': float, 'lng': float, 'state': str, 'addr': str})
 # Multithreading
 pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=2)
 
@@ -63,7 +65,8 @@ id_socket_link: dict[str, str] = dict()
 
 def all_bins() -> list[Bin]:
     cols: list[str] = Bins.query.first().__table__.columns.keys()
-    return cast(list[Bin], [{col: getattr(bin_, col) for col in cols} for bin_ in Bins.query.all()])  # Hope nothing goes wrong if I miscast
+    # Hope nothing goes wrong if I miscast
+    return cast(list[Bin], [{col: getattr(bin_, col) for col in cols} for bin_ in Bins.query.all()])
 
 
 def json_serial(obj):  # Stolen from https://stackoverflow.com/a/22238613
@@ -99,12 +102,14 @@ class AddBin(Resource):
 
         lat: float = result['lat']
         lng: float = result['lng']
-        full_addr: str = Nominatim(user_agent='6bceb638-f132-4961-b7c2-fe6d588df78d').reverse((lat, lng)).address
+        full_addr: str = Nominatim(
+            user_agent='6bceb638-f132-4961-b7c2-fe6d588df78d').reverse((lat, lng)).address
         addr: str = ','.join(full_addr.split(',', 2)[0:2])
         bins: Bins = Bins(lat=lat, lng=lng, state='EMPTY', addr=addr)
         db.session.add(bins)
         db.session.commit()
-        socket.emit('new-bin', {'id': bins.id_, 'lat': lat, 'lng': lng, 'addr': addr, 'state': 'EMPTY'})
+        socket.emit('new-bin', {'id': bins.id_, 'lat': lat,
+                    'lng': lng, 'addr': addr, 'state': 'EMPTY'})
         return jsonify(bins.id_)
 
 
@@ -129,7 +134,8 @@ class TestPing(Resource):
 @api.route('/api/test-file')
 class TestFile(Resource):
     def get(self):
-        file_path: str = Path(__file__).parent.resolve() / 'img' / request.json['file_path']
+        file_path: str = Path(__file__).parent.resolve() / \
+            'img' / request.json['file_path']
         pool.submit(future_wrapper(1), path=file_path)
 
 

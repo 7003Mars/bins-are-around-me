@@ -16,7 +16,8 @@ from PIL.Image import Image as PImage
 
 from dotenv import load_dotenv
 load_dotenv()
-client: RekognitionClient = boto3.client('rekognition', region_name='us-east-1')  # Credentials in ~/.aws/credentials
+client: RekognitionClient = boto3.client(
+    'rekognition', region_name='us-east-1')  # Credentials in ~/.aws/credentials
 with open('trash_labels.csv', 'r') as f:
     trash_labels: set[str] = set(chain.from_iterable(csv.reader(f)))
 
@@ -27,7 +28,8 @@ class States(Enum):
     OVERFLOW = 3
 
 
-def get_state_result(image: PImage = None, path: Union[Path, str] = None) -> States:  # TODO: Figure out why mypy isnt type checking this
+# TODO: Figure out why mypy isnt type checking this
+def get_state_result(image: PImage = None, path: Union[Path, str] = None) -> States:
     if Path is not None:
         image = Image.open(path)
     else:
@@ -35,7 +37,8 @@ def get_state_result(image: PImage = None, path: Union[Path, str] = None) -> Sta
     bytes_: BytesIO = BytesIO()
     image.save(bytes_, format='JPEG')
     bytes_.seek(0)
-    response: DetectLabelsResponseTypeDef = client.detect_labels(Image={'Bytes': bytes_.read()})
+    response: DetectLabelsResponseTypeDef = client.detect_labels(
+        Image={'Bytes': bytes_.read()})
     logging.debug(f'Labels: {response["Labels"]}')
 
     bin_: Optional[LabelTypeDef] = None
