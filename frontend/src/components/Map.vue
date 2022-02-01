@@ -59,7 +59,7 @@ export default class BinMap extends Vue {
 
 <style scoped>
 #map {
-  width: 400px;
-  height: 90%;
+  width: 90%;
+  height: 500px;
 }
 </style>

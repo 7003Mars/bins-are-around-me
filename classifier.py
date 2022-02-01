@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Union
 import csv
 from itertools import chain
+import logging
+from typing import Optional
 
 import boto3
 from mypy_boto3_rekognition import RekognitionClient
@@ -15,7 +17,6 @@ from PIL.Image import Image as PImage
 from dotenv import load_dotenv
 load_dotenv()
 client: RekognitionClient = boto3.client('rekognition', region_name='us-east-1')  # Credentials in ~/.aws/credentials
-
 with open('trash_labels.csv', 'r') as f:
     trash_labels: set[str] = set(chain.from_iterable(csv.reader(f)))
 
@@ -26,7 +27,7 @@ class States(Enum):
     OVERFLOW = 3
 
 
-def state_result(image: PImage = None, path: Union[Path, str] = None) -> States:  # TODO: Figure out why mypy isnt type checking this
+def get_state_result(image: PImage = None, path: Union[Path, str] = None) -> States:  # TODO: Figure out why mypy isnt type checking this
     if Path is not None:
         image = Image.open(path)
     else:
@@ -35,9 +36,9 @@ def state_result(image: PImage = None, path: Union[Path, str] = None) -> States:
     image.save(bytes_, format='JPEG')
     bytes_.seek(0)
     response: DetectLabelsResponseTypeDef = client.detect_labels(Image={'Bytes': bytes_.read()})
-    print(response)
+    logging.debug(f'Labels: {response["Labels"]}')
 
-    bin_: LabelTypeDef = None
+    bin_: Optional[LabelTypeDef] = None
     detected_trash: list[LabelTypeDef] = []
     for label in response['Labels']:
         if label['Name'].lower() == 'trash can':
@@ -53,4 +54,4 @@ def state_result(image: PImage = None, path: Union[Path, str] = None) -> States:
 
 
 if __name__ == '__main__':
-    print(state_result(path='./img/1.jpg'))
+    print(get_state_result(path='./img/1.jpg'))

@@ -1,7 +1,9 @@
 import logging
+import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
-from typing import Optional, cast
+from typing import Callable, Optional, cast
 
 from flask import Flask
 from flask import json as flask_json
@@ -13,6 +15,8 @@ from flask_socketio import SocketIO as SocketIO_Flask
 from flask_sqlalchemy import SQLAlchemy
 from geopy.geocoders import Nominatim
 from typing_extensions import TypedDict
+
+from classifier import States, get_state_result
 
 app: Flask = Flask(__name__)
 CORS(app)
@@ -32,11 +36,26 @@ class Bins(db.Model):
     last_update = db.Column(db.DateTime, default=datetime.now)
     lat = db.Column(db.Float)
     lng = db.Column(db.Float)
-    state = db.Column(db.Enum('EMPTY', 'FULL'))
+    state = db.Column(db.Enum('EMPTY', 'FULL', 'OVERFLOW'))
     addr = db.Column(db.String(255))
 
 
 Bin = TypedDict('Bin', {'id': int, 'last_update': datetime, 'lat': float, 'lng': float, 'state': str, 'addr': str})
+# Multithreading
+pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=2)
+
+
+def future_wrapper(bin_id: int) -> Callable[..., None]:
+    def wrapper(*args, **kwargs):
+        print('aeee')
+        res = get_state_result(*args, **kwargs)
+        print(res)
+        socket.emit('bin-update', {'id_': bin_id, 'state': res.name})
+        Bins.query.get(bin_id).state = res.name
+        db.session.commit()
+        print(f'Bin {bin_id} updated to {res}')
+    return wrapper
+
 
 # Others
 id_socket_link: dict[str, str] = dict()
@@ -44,7 +63,7 @@ id_socket_link: dict[str, str] = dict()
 
 def all_bins() -> list[Bin]:
     cols: list[str] = Bins.query.first().__table__.columns.keys()
-    return cast(list[bin], [{col: getattr(bin_, col) for col in cols} for bin_ in Bins.query.all()])  # Hope nothing goes wrong if I miscast
+    return cast(list[Bin], [{col: getattr(bin_, col) for col in cols} for bin_ in Bins.query.all()])  # Hope nothing goes wrong if I miscast
 
 
 def json_serial(obj):  # Stolen from https://stackoverflow.com/a/22238613
@@ -107,5 +126,18 @@ class TestPing(Resource):
         return
 
 
+@api.route('/api/test-file')
+class TestFile(Resource):
+    def get(self):
+        file_path: str = Path(__file__).parent.resolve() / 'img' / request.json['file_path']
+        pool.submit(future_wrapper(1), path=file_path)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+    # res = pool.submit(future_wrapper(1), path='./img/1.jpg')
+    # time.sleep(5)
+    # res = pool.submit(future_wrapper(1), path='./img/2.jpg')
+
+    # while not res.done():
+    #     time.sleep(0.2)

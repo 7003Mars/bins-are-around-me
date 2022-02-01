@@ -1,6 +1,6 @@
 <template>
   <div>
-      <span>{{bin.addr}}</span>
+      <span>{{bin.addr}}: {{bin.state}}</span>
   </div>
 </template>
 

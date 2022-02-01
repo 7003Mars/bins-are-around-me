@@ -1,6 +1,6 @@
 <template>
   <div>
-    <bin-map :bins="bins"></bin-map>
+    <bin-map :bins="bins" :requirement="4"></bin-map>
     <location-component v-for="bin in bins" :key="bin.id_" :bin="bin"></location-component>
   </div>
 
@@ -30,21 +30,23 @@ export default class App extends Vue {
   bins: BinArray = []
   @Socket('bins')
   loadBins(bins: BinArray) {
-    this.bins = this.bins.concat(bins)
+    console.log('Connected to server')
+    this.bins = bins
     console.log('Bins:', this.bins)
   }
 
 
   @Socket('bin-update')
   binUpdate(data: { id_: number, state: string}) {
+    console.log('Bin update:', data)
     // this.$set(this.bins.get(data['id_'])!, 'state', data['state'])
-    const index: number = this.bins.findIndex(bin => bin.id_ === data.id_)
+    const index: number = this.bins.findIndex(bin => bin.id_ == data.id_)
     const bin: BinObject = this.bins[index]
     bin.state = data.state
     this.$set(this.bins, index, bin)
     
     // this.$forceUpdate()
-    console.log(this.bins, data, this)
+    console.log(this.bins, this)
   }
 
 }
