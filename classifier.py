@@ -28,13 +28,14 @@ class States(Enum):
     OVERFLOW = 3
 
 
-# TODO: Figure out why mypy isnt type checking this
-def get_state_result(image: PImage = None, path: Union[Path, str] = None) -> States:
-    if Path is not None:
+# TODO: Figure out why mypy isnt type checking this. Found: The 2 arguments were not actually kwargs
+def get_state_result(*, image: PImage = None, path: Union[Path, str] = None) -> States:
+    #Protip: Path vs path
+    if path is not None:
         image = Image.open(path)
-    else:
-        assert image is not None, 'Either image or path must be provided'
+    assert image is not None, 'Either image or path must be provided'
     bytes_: BytesIO = BytesIO()
+    print(bytes_.writable())
     image.save(bytes_, format='JPEG')
     bytes_.seek(0)
     response: DetectLabelsResponseTypeDef = client.detect_labels(

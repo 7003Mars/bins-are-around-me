@@ -1,3 +1,4 @@
+from ast import parse
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
@@ -5,8 +6,10 @@ from pathlib import Path
 from typing import Callable, Optional, cast
 
 from flask import Flask
+from PIL import Image
 from flask import json as flask_json
-from flask import jsonify, request
+from flask import jsonify, request, Blueprint
+from werkzeug.datastructures import FileStorage
 from flask_cors import CORS  # TODO: Needed?
 from flask_restx import Api, Resource
 from flask_restx.reqparse import RequestParser
@@ -21,9 +24,10 @@ app: Flask = Flask(__name__)
 CORS(app)
 # Sockets
 socket: SocketIO_Flask = SocketIO_Flask(
-    app, cors_allowed_origins="*", json=flask_json)
+    app, cors_allowed_origins='*', json=flask_json)
 # Rest
-api: Api = Api(app)
+api_bp: Blueprint = Blueprint('api', __name__)
+api: Api = Api(api_bp)
 # Db config
 db_path: str = 'sqlite:///' + \
     str(Path(__file__).parent.resolve() / "database.db")
@@ -47,11 +51,9 @@ Bin = TypedDict('Bin', {'id': int, 'last_update': datetime,
 pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=2)
 
 
-def future_wrapper(bin_id: int) -> Callable[..., None]:
+def state_future_wrapper(bin_id: int) -> Callable[..., None]:
     def wrapper(*args, **kwargs):
-        print('aeee')
         res = get_state_result(*args, **kwargs)
-        print(res)
         socket.emit('bin-update', {'id_': bin_id, 'state': res.name})
         Bins.query.get(bin_id).state = res.name
         db.session.commit()
@@ -92,7 +94,7 @@ def connect(auth: dict) -> Optional[bool]:
 
 
 # Api
-@api.route('/api/add-bin')
+@api.route('/add-bin')
 class AddBin(Resource):
     def post(self):
         parser: RequestParser = RequestParser()
@@ -113,7 +115,7 @@ class AddBin(Resource):
         return jsonify(bins.id_)
 
 
-@api.route('/api/get-bins')
+@api.route('/get-bins')
 class ListBins(Resource):
     def get(self):
         result: list[Bin] = all_bins()
@@ -121,25 +123,48 @@ class ListBins(Resource):
         return jsonify(result)
 
 
-@api.route('/api/test-ping')
+@api.route('/change-state')
 class TestPing(Resource):
-    def get(self):
-        state: str = request.json['state']
-        socket.emit('bin-update', {'id_': 1, 'state': state.upper()})
-
+    def post(self):
+        parser: RequestParser = RequestParser()
+        parser.add_argument('id', type=int, required=True)
+        parser.add_argument('state', type=str, required=True)  # TODO: Make it an enum
+        result: dict = parser.parse_args()
+        id_: int = result['id']
+        state: str = result['state'].upper()
+        socket.emit('bin-update', {'id_': id_, 'state': state})
+        Bins.query.get(id_).state = state
+        db.session.commit()
         # socket.emit('test-ping', {'message': 'pong'})
         return
 
 
-@api.route('/api/test-file')
+@api.route('/test-file')
 class TestFile(Resource):
     def get(self):
         file_path: str = Path(__file__).parent.resolve() / \
             'img' / request.json['file_path']
-        pool.submit(future_wrapper(1), path=file_path)
+        pool.submit(state_future_wrapper(1), path=file_path)
+        return
+
+
+@api.route('/update-bin')
+class UpdateBin(Resource):
+    def post(self):
+        parser: RequestParser = RequestParser()
+        parser.add_argument('id', type=int, required=True, location='form')
+        parser.add_argument('file', type=FileStorage, location='files', required=True)
+        result: dict = parser.parse_args()
+        id_: int = result['id']
+        file = result['file']
+        image: Image.Image = Image.open(file)
+        image.load()
+        pool.submit(state_future_wrapper(id_), image=image)  # TODO: Fixme
+        return
 
 
 if __name__ == '__main__':
+    app.register_blueprint(api_bp, url_prefix='/api')
     app.run(debug=True)
     # res = pool.submit(future_wrapper(1), path='./img/1.jpg')
     # time.sleep(5)
