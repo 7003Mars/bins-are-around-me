@@ -1,16 +1,16 @@
 <template>
   <div>
-      <span>{{bin.addr}}: {{bin.state}}</span>
+    <span v-for="bin in bins" :key="bin.id_">{{bin.addr}}: {{bin.state}}</span>
   </div>
 </template>
 
 <script lang='ts'>
 import { bind } from 'leaflet'
 import {Vue, Component, Prop} from 'vue-property-decorator'
-import {BinObject} from '../base-types'
+import {BinArray} from '../base-types'
 @Component
 export default class LocationComponent extends Vue{
-  @Prop({type: Object}) bin!: BinObject
+  @Prop({type: Object}) bins!: BinArray
 
 
 
@@ -18,5 +18,8 @@ export default class LocationComponent extends Vue{
 </script>
 
 <style scoped>
-
+span {
+  border-radius: 20px;
+  background-color: #50D8D7;
+}
 </style>
