@@ -1,22 +1,21 @@
-from ast import parse
 import logging
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
 from pathlib import Path
 from typing import Callable, Optional, cast
 
-from flask import Flask
-from PIL import Image
+from flask import Blueprint, Flask
 from flask import json as flask_json
-from flask import jsonify, request, Blueprint
-from werkzeug.datastructures import FileStorage
+from flask import jsonify, request
 from flask_cors import CORS  # TODO: Needed?
 from flask_restx import Api, Resource
 from flask_restx.reqparse import RequestParser
 from flask_socketio import SocketIO as SocketIO_Flask
 from flask_sqlalchemy import SQLAlchemy
 from geopy.geocoders import Nominatim
+from PIL import Image
 from typing_extensions import TypedDict
+from werkzeug.datastructures import FileStorage
 
 from classifier import States, get_state_result
 
@@ -139,13 +138,13 @@ class TestPing(Resource):
         return
 
 
-@api.route('/test-file')
-class TestFile(Resource):
-    def get(self):
-        file_path: str = Path(__file__).parent.resolve() / \
-            'img' / request.json['file_path']
-        pool.submit(state_future_wrapper(1), path=file_path)
-        return
+# @api.route('/test-file')
+# class TestFile(Resource):
+#     def get(self):
+#         file_path: str = Path(__file__).parent.resolve() / \
+#             'img' / request.json['file_path']
+#         pool.submit(state_future_wrapper(1), path=file_path)
+#         return
 
 
 @api.route('/update-bin')

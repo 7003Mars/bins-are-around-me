@@ -30,7 +30,7 @@ class States(Enum):
 
 # TODO: Figure out why mypy isnt type checking this. Found: The 2 arguments were not actually kwargs
 def get_state_result(*, image: PImage = None, path: Union[Path, str] = None) -> States:
-    #Protip: Path vs path
+    # Protip: Path vs path
     if path is not None:
         image = Image.open(path)
     assert image is not None, 'Either image or path must be provided'
