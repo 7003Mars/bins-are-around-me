@@ -1,7 +1,6 @@
 <template>
     <l-map id="map" :zoom="18" :lat-lng="[1.327, 103.8972]"  ref="map" :maxBounds="[[1.56073, 104.1147], [1.16, 103.502]]" @ready="onMapReady()">
-    <!-- TODO: Attribution--> 
-        <l-tile-layer url="https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png" :minZoom="11" :maxZoom="18"></l-tile-layer>
+        <l-tile-layer url="https://maps-{s}.onemap.sg/v3/Default/{z}/{x}/{y}.png" :minZoom="11" :maxZoom="18" attribution="&lt;img src=&quot;https://docs.onemap.gov.sg/maps/images/oneMap64-01.png&quot; style=&quot;height:20px;width:20px;&quot;/&gt; OneMap | Map data &amp;copy; contributors, &lt;a href=&quot;http://SLA.gov.sg&quot;&gt;Singapore Land Authority&lt;/a&gt;"></l-tile-layer>
         <!-- TODO: Maybe find vector tilesets -->
         <l-marker v-for="bin in filteredBins" :key="bin.id_" :lat-lng="[bin.lat, bin.lng]" :icon="icons.get(bin.state)">
         </l-marker>

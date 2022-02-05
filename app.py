@@ -79,7 +79,7 @@ def json_serial(obj):  # Stolen from https://stackoverflow.com/a/22238613
 
 
 # Sockets
-@socket.on('connect')  # TODO: /api/ route for apis
+@socket.on('connect')
 def connect(auth: dict) -> Optional[bool]:
     sid: str = request.sid  # type:ignore
     socket.emit('bins', all_bins(), room=sid)
@@ -158,7 +158,7 @@ class UpdateBin(Resource):
         file = result['file']
         image: Image.Image = Image.open(file)
         image.load()
-        pool.submit(state_future_wrapper(id_), image=image)  # TODO: Fixme
+        pool.submit(state_future_wrapper(id_), image=image)
         return
 
 
