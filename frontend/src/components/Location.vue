@@ -1,6 +1,6 @@
 <template>
   <div>
-    <span v-for="bin in bins" :key="bin.id_">{{bin.addr}}: {{bin.state}}</span>
+    <span v-for="bin in bins" :key="bin.id_">{{bin.addr}}: {{bin.state}}</span> <!--TODO: Split state and address-->
   </div>
 </template>
 
@@ -10,16 +10,10 @@ import {Vue, Component, Prop} from 'vue-property-decorator'
 import {BinArray} from '../base-types'
 @Component
 export default class LocationComponent extends Vue{
-  @Prop({type: Object}) bins!: BinArray
-
-
-
+  @Prop({type: Array}) bins!: BinArray
 }
 </script>
 
 <style scoped>
-span {
-  border-radius: 20px;
-  background-color: #50D8D7;
-}
+
 </style>
