@@ -4,7 +4,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Callable, Optional, cast
 
-from flask import Blueprint, Flask
+from flask import Blueprint, Flask, abort
 from flask import json as flask_json
 from flask import jsonify, request
 from flask_cors import CORS  # TODO: Needed?
@@ -19,7 +19,7 @@ from werkzeug.datastructures import FileStorage
 
 from classifier import States, get_state_result
 
-app: Flask = Flask(__name__)
+app: Flask = Flask(__name__, static_url_path='', static_folder='frontend/dist')
 CORS(app)
 # Sockets
 socket: SocketIO_Flask = SocketIO_Flask(
@@ -53,9 +53,12 @@ pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=2)
 def state_future_wrapper(bin_id: int) -> Callable[..., None]:
     def wrapper(*args, **kwargs):
         res = get_state_result(*args, **kwargs)
-        socket.emit('bin-update', {'id_': bin_id, 'state': res.name})
-        Bins.query.get(bin_id).state = res.name
+        row = Bins.query.get(bin_id)  # TODO: Type
+        if row is None:
+            return
+        row.state = res.name
         db.session.commit()
+        socket.emit('bin-update', {'id_': bin_id, 'state': res.name})
         print(f'Bin {bin_id} updated to {res}')
     return wrapper
 
@@ -124,16 +127,23 @@ class ListBins(Resource):
 
 @api.route('/change-state')
 class TestPing(Resource):
+    # This is only here for the swagger docs
+    parser: RequestParser = RequestParser()
+    parser.add_argument('id', type=int, required=True)
+    parser.add_argument('state', type=str, required=True, choices=States._member_names_)
+
+    @api.expect(parser)
     def post(self):
-        parser: RequestParser = RequestParser()
-        parser.add_argument('id', type=int, required=True)
-        parser.add_argument('state', type=str, required=True)  # TODO: Make it an enum
-        result: dict = parser.parse_args()
+        result: dict = type(self).parser.parse_args()  # TODO: I'm sure there is a better way to get the parser
         id_: int = result['id']
         state: str = result['state'].upper()
-        socket.emit('bin-update', {'id_': id_, 'state': state})
-        Bins.query.get(id_).state = state
+        row = Bins.query.get(id_)  # TODO: Type
+        if row is not None:
+            row.state = state
+        else:
+            return abort(400, f'Bin {id_} does not exist')  # TODO: This might be the wrong errror code
         db.session.commit()
+        socket.emit('bin-update', {'id_': id_, 'state': state})
         # socket.emit('test-ping', {'message': 'pong'})
         return
 
@@ -149,11 +159,13 @@ class TestPing(Resource):
 
 @api.route('/update-bin')
 class UpdateBin(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument('id', type=int, required=True, location='form')
+    parser.add_argument('file', type=FileStorage, location='files', required=True)
+
+    @api.expect(parser)
     def post(self):
-        parser: RequestParser = RequestParser()
-        parser.add_argument('id', type=int, required=True, location='form')
-        parser.add_argument('file', type=FileStorage, location='files', required=True)
-        result: dict = parser.parse_args()
+        result: dict = type(self).parser.parse_args()
         id_: int = result['id']
         file = result['file']
         image: Image.Image = Image.open(file)
@@ -162,8 +174,9 @@ class UpdateBin(Resource):
         return
 
 
+app.register_blueprint(api_bp, url_prefix='/api')
+
 if __name__ == '__main__':
-    app.register_blueprint(api_bp, url_prefix='/api')
     app.run(debug=True)
     # res = pool.submit(future_wrapper(1), path='./img/1.jpg')
     # time.sleep(5)
