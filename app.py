@@ -130,18 +130,21 @@ class TestPing(Resource):
     # This is only here for the swagger docs
     parser: RequestParser = RequestParser()
     parser.add_argument('id', type=int, required=True)
-    parser.add_argument('state', type=str, required=True, choices=States._member_names_)
+    parser.add_argument('state', type=str, required=True,
+                        choices=States._member_names_)
 
     @api.expect(parser)
     def post(self):
-        result: dict = type(self).parser.parse_args()  # TODO: I'm sure there is a better way to get the parser
+        # TODO: I'm sure there is a better way to get the parser
+        result: dict = type(self).parser.parse_args()
         id_: int = result['id']
         state: str = result['state'].upper()
         row = Bins.query.get(id_)  # TODO: Type
         if row is not None:
             row.state = state
         else:
-            return abort(400, f'Bin {id_} does not exist')  # TODO: This might be the wrong errror code
+            # TODO: This might be the wrong errror code
+            return abort(400, f'Bin {id_} does not exist')
         db.session.commit()
         socket.emit('bin-update', {'id_': id_, 'state': state})
         # socket.emit('test-ping', {'message': 'pong'})
@@ -161,7 +164,8 @@ class TestPing(Resource):
 class UpdateBin(Resource):
     parser: RequestParser = RequestParser()
     parser.add_argument('id', type=int, required=True, location='form')
-    parser.add_argument('file', type=FileStorage, location='files', required=True)
+    parser.add_argument('file', type=FileStorage,
+                        location='files', required=True)
 
     @api.expect(parser)
     def post(self):
