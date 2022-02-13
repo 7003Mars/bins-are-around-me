@@ -1,4 +1,3 @@
-
 from enum import Enum
 from io import BytesIO
 from pathlib import Path
@@ -16,8 +15,10 @@ from PIL.Image import Image as PImage
 
 from dotenv import load_dotenv
 load_dotenv()
+
+logger: logging.Logger = logging.getLogger(__name__)
 client: RekognitionClient = boto3.client(
-    'rekognition', region_name='us-east-1')  # Credentials in ~/.aws/credentials
+    'rekognition', region_name='us-east-1')  # Use .env
 with open('trash_labels.csv', 'r') as f:
     trash_labels: set[str] = set(chain.from_iterable(csv.reader(f)))
 
@@ -29,18 +30,18 @@ class States(Enum):
 
 
 # Figure out why mypy isnt type checking this. Found: The 2 arguments were not actually kwargs
+# TODO: Make logger catch exceptions. For now vscode debugger is used
 def get_state_result(*, image: PImage = None, path: Union[Path, str] = None) -> States:
     # Protip: Path vs path
     if path is not None:
         image = Image.open(path)
     assert image is not None, 'Either image or path must be provided'
     bytes_: BytesIO = BytesIO()
-    print(bytes_.writable())
     image.save(bytes_, format='JPEG')
     bytes_.seek(0)
     response: DetectLabelsResponseTypeDef = client.detect_labels(
         Image={'Bytes': bytes_.read()})
-    logging.debug(f'Labels: {response["Labels"]}')
+    logger.debug(f'Labels: {response["Labels"]}')
 
     bin_: Optional[LabelTypeDef] = None
     detected_trash: list[LabelTypeDef] = []
