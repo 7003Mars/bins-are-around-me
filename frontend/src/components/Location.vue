@@ -1,6 +1,6 @@
 <template>
   <div>
-    <span v-for="bin in bins" :key="bin.id_">{{bin.addr}}: {{bin.state}}</span> <!--TODO: Split state and address-->
+    <h4 v-for="bin in bins" :key="bin.id_">{{bin.addr}}: {{bin.state}}</h4> <!--TODO: Split state and address-->
   </div>
 </template>
 
