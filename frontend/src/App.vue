@@ -1,7 +1,9 @@
 <template>
   <div id="app">
     <bin-map :bins="bins" :requirement="4"></bin-map>
-    <location-component :bins="bins"></location-component>
+    <div id="location-container">
+      <location-component v-for="bin in bins" :key="bin.id_" :bin="bin"></location-component>
+    </div>
   </div>
 </template>
 
@@ -59,5 +61,8 @@ export default class App extends Vue {
 body {
   width: 100%;
   height: 100%;
+}
+#location-container {
+  display: flex;
 }
 </style>
