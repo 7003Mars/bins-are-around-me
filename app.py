@@ -98,17 +98,19 @@ def connect(auth: dict) -> Optional[bool]:
 # Api
 @api.route('/add-bin')
 class AddBin(Resource):
+    parser: RequestParser = RequestParser()
+    parser.add_argument('lat', type=float, required=True)
+    parser.add_argument('lng', type=float, required=True)
+
+    @api.expect(parser)
     def post(self):
-        parser: RequestParser = RequestParser()
-        parser.add_argument('lat', type=float, required=True)
-        parser.add_argument('lng', type=float, required=True)
-        result: dict = parser.parse_args()
+        result: dict = type(self).parser.parse_args()
 
         lat: float = result['lat']
         lng: float = result['lng']
         full_addr: str = Nominatim(
             user_agent='6bceb638-f132-4961-b7c2-fe6d588df78d').reverse((lat, lng)).address
-        addr: str = ','.join(full_addr.split(',', 2)[0:2])
+        addr: str = ','.join(full_addr.split(',')[0:3])
         bins: Bins = Bins(lat=lat, lng=lng, state='EMPTY', addr=addr)
         db.session.add(bins)
         db.session.commit()
