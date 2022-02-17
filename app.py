@@ -6,7 +6,7 @@ from typing import Callable, Optional, cast
 
 from flask import Blueprint, Flask, abort
 from flask import json as flask_json
-from flask import jsonify, request
+from flask import jsonify, render_template, request
 from flask_cors import CORS  # TODO: Needed?
 from flask_restx import Api, Resource
 from flask_restx.reqparse import RequestParser
@@ -176,6 +176,13 @@ class UpdateBin(Resource):
         image.load()
         pool.submit(state_future_wrapper(id_), image=image)
         return
+
+
+# Bin report
+# TODO: Make it a vue page
+@app.get('/bin-report')
+def bin_report():
+    return render_template('bin-report.html')
 
 
 app.register_blueprint(api_bp, url_prefix='/api')

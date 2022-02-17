@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report a bin</title>
+</head>
+<body>
+    <header>Bin full? Report it here!</header>
+    <form action="/api/update-bin" method="post" enctype="multipart/form-data">
+        <input type="number" name="id" placeholder="Input bin id">
+        <input type="file" accept="image/*" name="file">
+        <input type="submit" value="Upload">
+    </form>
+</body>
+</html>
+<!--Thanks copilot <3 -->
+<!--Beautify the page-->
+<style>
+    header {
+        text-align: center;
+        font-size: 2em;
+        font-weight: bold;
+        margin-bottom: 1em;
+    }
+    form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    input {
+        margin: 0.5em;
+        padding: 0.5em;
+        font-size: 1em;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+    }
+    input[type="submit"] {
+        background-color: #4CAF50;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+    }
+</style>
